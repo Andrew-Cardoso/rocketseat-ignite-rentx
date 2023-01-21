@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Specification {
+  id                String             @id @default(uuid()) @db.Uuid
+  name              String
+  description       String
+  createdAt         DateTime           @default(now()) @map("created_at")
+  specificationCars CarSpecification[]
+
+  @@map("specifications")
+}
+
+model Category {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String
+  createdAt   DateTime @default(now()) @map("created_at")
+  cars        Car[]
+
+  @@map("categories")
+}
+
+model User {
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String
+  email         String   @unique
+  hash          String
+  salt          String
+  avatar        String
+  driverLicense String   @map("driver_license")
+  createdAt     DateTime @default(now()) @map("created_at")
+  role          Role     @default(USER)
+  Rental        Rental[]
+
+  @@map("users")
+}
+
+model Car {
+  id                String             @id @default(uuid()) @db.Uuid
+  name              String
+  description       String
+  dailyRate         Float              @map("daily_rate")
+  available         Boolean            @default(true)
+  licensePlate      String             @map("license_plate")
+  fineAmount        Float              @map("fine_amount")
+  brand             String
+  createdAt         DateTime           @default(now()) @map("created_at")
+  categoryId        String             @map("category_id") @db.Uuid
+  category          Category           @relation(fields: [categoryId], references: [id])
+  carSpecifications CarSpecification[]
+  Rental            Rental[]
+}
+
+model CarSpecification {
+  specificationId String        @map("specification_id") @db.Uuid
+  carId           String        @map("car_id") @db.Uuid
+  specification   Specification @relation(fields: [specificationId], references: [id])
+  car             Car           @relation(fields: [carId], references: [id])
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  @@id([specificationId, carId])
+  @@map("specifications_cars")
+}
+
+model Rental {
+  id                 String   @id @default(uuid()) @db.Uuid
+  carId              String   @map("car_id") @db.Uuid
+  userId             String   @map("user_id") @db.Uuid
+  startDate          DateTime @map("start_date")
+  endDate            DateTime @map("end_date")
+  expectedReturnDate DateTime @map("expected_return_date")
+  total              Float
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @default(now()) @map("updated_at")
+  car                Car      @relation(fields: [carId], references: [id])
+  user               User     @relation(fields: [userId], references: [id])
+
+  @@map("rentals")
+}
+
+model CarImage {
+  id        String   @id @default(uuid()) @db.Uuid
+  carId     String   @map("car_id") @db.Uuid
+  imageName String   @map("image_name")
+  createdAt DateTime @default(now()) @map("created_at")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
